@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""Simple helper function"""
+"""
+Deletion-resilient hypermedia pagination
+"""
+
 import csv
 import math
-from typing import List, Tuple
+from typing import List, Dict
 
 
 class Server:
@@ -37,21 +40,22 @@ class Server:
         return self.__indexed_dataset
 
     def get_hyper_index(self, index: int = None, page_size: int = 10) -> Dict:
-        """Retrieve information about a specific index..."""
-        assert index is None or (isinstance(index, int) and index >= 0)
-        assert isinstance(page_size, int) and page_size > 0
-
-        dataset = self.indexed_dataset()
-        max_index = len(dataset) - 1
-
-        if index is not None:
-            assert 0 <= index <= max_index
-
-        current_index = index if index is not None else 0
-        next_index = min(current_index + page_size, max_index + 1)
+        """get_hyper_index function"""
+        assert type(index) == int
+        assert type(page_size) == int
+        csv = self.indexed_dataset()
+        csv_size = len(csv)
+        assert 0 <= index < csv_size
+        data = []
+        _next = index
+        for _ in range(page_size):
+            while not csv.get(_next):
+                _next += 1
+            data.append(csv.get(_next))
+            _next += 1
         return {
-            "index": current_index,
-            "next_index": next_index,
+            "index": index,
+            "data": data,
             "page_size": page_size,
-            "data": [dataset[i] for i in range(current_index, next_index)]
+            "next_index": _next
         }
